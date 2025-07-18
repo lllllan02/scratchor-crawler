@@ -7,9 +7,9 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func GetChapter(url, cookie string) (links []string, next string, err error) {
+func (client *Client) GetChapter(url string) (links []string, next string, err error) {
 	// 获取 html
-	body, err := Get(url, cookie)
+	body, err := client.Get(url)
 	if err != nil {
 		return nil, "", err
 	}

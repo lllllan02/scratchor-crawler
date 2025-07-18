@@ -10,14 +10,17 @@ import (
 )
 
 type Crawler struct {
+	client *api.Client
 	force  bool
-	cookie string
 }
 
-func NewCrawler(cookie string) *Crawler {
-	return &Crawler{
-		cookie: cookie,
+func NewCrawler(cookie string) (*Crawler, error) {
+	client, err := api.NewClient(cookie)
+	if err != nil {
+		return nil, err
 	}
+
+	return &Crawler{client: client}, nil
 }
 
 func (c *Crawler) Force() *Crawler {
@@ -43,7 +46,7 @@ func (c *Crawler) Cats() error {
 func (c *Crawler) Cat(id int) error {
 	fmt.Printf("开始爬取分类 %d 的章节...\n", id)
 
-	chatpters, err := api.GetCat(id, c.cookie)
+	chatpters, err := c.client.GetCat(id)
 	if err != nil {
 		fmt.Printf("failed crawl cat %d: %v\n", id, err)
 		return err
@@ -84,7 +87,7 @@ func (c *Crawler) Chapter(url string) error {
 	for {
 		fmt.Printf("正在爬取分类 %d 章节 %d 第 %d 页...\n", cat, chapter, pageNum)
 
-		views, next, err := api.GetChapter(url, c.cookie)
+		views, next, err := c.client.GetChapter(url)
 		if err != nil {
 			fmt.Printf("failed crawl chapter %s: %v\n", url, err)
 			return err
@@ -132,7 +135,7 @@ func (c *Crawler) View(path, url string) error {
 
 	fmt.Printf("开始获取题目详情: %s (alias: %s)\n", url, alias)
 
-	view, err := api.GetView(url, c.cookie)
+	view, err := c.client.GetView(url)
 	if err != nil {
 		fmt.Printf("failed crawl view %s: %v\n", url, err)
 		return err

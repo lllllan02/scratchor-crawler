@@ -16,7 +16,7 @@ func TestGetView(t *testing.T) {
 		"https://tiku.scratchor.com/question/view/d9pvk7okovzdtu2d", // 问答题
 		"https://tiku.scratchor.com/question/view/syrdjesndgxqiobb", // 组合题
 	} {
-		view, err := GetView(url, cookie)
+		view, err := client.GetView(url)
 		assert.NoError(t, err)
 
 		fmt.Printf("view.Tags: %+v\n", view.Tags)

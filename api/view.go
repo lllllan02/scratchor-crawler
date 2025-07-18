@@ -19,8 +19,8 @@ type Question struct {
 	Option []string
 }
 
-func GetView(url, cookie string) (*View, error) {
-	body, err := Get(url, cookie)
+func (client *Client) GetView(url string) (*View, error) {
+	body, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}

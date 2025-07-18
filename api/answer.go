@@ -15,11 +15,11 @@ var (
 	ErrAPIError           = errors.New("API请求失败")
 )
 
-func GetAnswer(id, cookie string) (string, error) {
+func (client *Client) GetAnswer(id string) (string, error) {
 	url := fmt.Sprintf("https://tiku.scratchor.com/question/answer/%s", id)
 
 	// 获取 html
-	body, err := Post(url, cookie, nil)
+	body, err := client.Post(url, nil)
 	if err != nil {
 		return "", err
 	}

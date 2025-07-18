@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetCat(t *testing.T) {
-	links, err := GetCat(1, cookie)
+	links, err := client.GetCat(1)
 	assert.NoError(t, err)
 	fmt.Printf("links: %v\n", links)
 }

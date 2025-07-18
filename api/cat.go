@@ -7,11 +7,11 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func GetCat(id int, cookie string) ([]string, error) {
+func (client *Client) GetCat(id int) ([]string, error) {
 	url := fmt.Sprintf("https://tiku.scratchor.com/question/cat/%d", id)
 
 	// 获取 html
-	body, err := Get(url, cookie)
+	body, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}
