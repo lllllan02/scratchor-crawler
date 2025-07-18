@@ -71,7 +71,8 @@ func getQuestion(doc *goquery.Selection) *Question {
 
 	// 获取选项
 	doc.Find("div.question .option .item").Each(func(i int, s *goquery.Selection) {
-		html, _ := s.Find("p").Html()
+		html, _ := s.Html()
+		html, _ = s.Find(".choice").Remove().End().Html()
 		question.Option = append(question.Option, strings.TrimSpace(html))
 	})
 
