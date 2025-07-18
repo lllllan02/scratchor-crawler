@@ -6,9 +6,60 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
+// 令牌桶限流器
+type rateLimiter struct {
+	tokens chan struct{}
+	rate   time.Duration
+}
+
+// 创建新的限流器，每秒允许指定数量的请求
+func newRateLimiter(qps int) *rateLimiter {
+	rl := &rateLimiter{
+		tokens: make(chan struct{}, qps),
+		rate:   time.Second / time.Duration(qps),
+	}
+
+	// 初始化令牌桶
+	for range qps {
+		rl.tokens <- struct{}{}
+	}
+
+	// 启动令牌补充协程
+	go rl.refillTokens()
+
+	return rl
+}
+
+// 补充令牌
+func (rl *rateLimiter) refillTokens() {
+	ticker := time.NewTicker(rl.rate)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		select {
+		case rl.tokens <- struct{}{}:
+			// 成功添加令牌
+		default:
+			// 桶已满，跳过
+		}
+	}
+}
+
+// 等待获取令牌
+func (rl *rateLimiter) wait() {
+	<-rl.tokens
+}
+
+// 全局限流器实例，每秒2次请求
+var globalLimiter = newRateLimiter(2)
+
 func Get(url, cookie string) (string, error) {
+	// 等待限流器允许请求
+	globalLimiter.wait()
+
 	// 创建 HTTP 客户端
 	client := &http.Client{}
 
@@ -58,6 +109,9 @@ func Get(url, cookie string) (string, error) {
 }
 
 func Post(url, cookie string, data any) (string, error) {
+	// 等待限流器允许请求
+	globalLimiter.wait()
+
 	var (
 		client   = &http.Client{}
 		jsonData []byte

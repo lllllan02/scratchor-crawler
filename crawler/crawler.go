@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/lllllan02/scratchor-crawler/api"
 )
@@ -62,7 +61,6 @@ func (c *Crawler) Cat(id int) error {
 
 	fmt.Printf("分类 %d 所有章节爬取完成\n", id)
 
-	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 
@@ -107,13 +105,10 @@ func (c *Crawler) Chapter(url string) error {
 		}
 		url = next
 		pageNum++
-
-		time.Sleep(500 * time.Millisecond)
 	}
 
 	fmt.Printf("分类 %d 章节 %d 爬取完成\n", cat, chapter)
 
-	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 
@@ -162,7 +157,5 @@ func (c *Crawler) View(path, url string) error {
 
 	fmt.Printf("题目详情保存成功: %s (大小: %d 字节)\n", filePath, len(data))
 
-	// 等待 500ms 防止被封 IP
-	time.Sleep(500 * time.Millisecond)
 	return nil
 }
