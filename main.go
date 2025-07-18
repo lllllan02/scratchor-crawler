@@ -1,5 +1,9 @@
 package main
 
-func main() {
+import "github.com/lllllan02/scratchor-crawler/crawler"
 
+func main() {
+	craler := crawler.NewCrawler("9c8adef9772544421fc21404af7ed346=9a1c906b7f040b2978339508d3037b0c; 26efeb6279834e831e8659742d83d367=ba5486b2eb8dc8c1eccc69152425306b; ssid=eyJpdiI6ImFUYW9zalBRV1JJQXk1VDZsaTQyN1E9PSIsInZhbHVlIjoiU3FRT0puOXVxZjIxTjB5TllkcGNUSHlzb2tsMmhPUTZucjNNOHZXdlhDRDhhWUtPU2p2NVk5TklIaStHK3Q4RFFvYXpYTG81Q2dFeTVuOEtvMFVSN3c9PSIsIm1hYyI6IjMyYTFhNGU1OGFhNjI0OGExNDM4N2I5YzJiOWM0YTc2OTY4MzhiYjRlNzllYTViOWRiOGRjZGQ0YjRlOTRkYmYifQ%3D%3D")
+
+	craler.Cats()
 }
