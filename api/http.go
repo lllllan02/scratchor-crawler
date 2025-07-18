@@ -56,99 +56,67 @@ func (rl *rateLimiter) wait() {
 // 全局限流器实例，每秒2次请求
 var globalLimiter = newRateLimiter(2)
 
-func Get(url, cookie string) (string, error) {
+// 请求配置结构体
+type requestConfig struct {
+	method      string
+	url         string
+	cookie      string
+	data        any
+	headers     map[string]string
+	contentType string
+}
+
+// 设置通用headers
+func setCommonHeaders(req *http.Request, config *requestConfig) {
+	// 设置通用headers
+	req.Header.Set("accept-language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
+	req.Header.Set("sec-ch-ua", `"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"`)
+	req.Header.Set("sec-ch-ua-mobile", "?0")
+	req.Header.Set("sec-ch-ua-platform", "macOS")
+	req.Header.Set("sec-fetch-site", "same-origin")
+	req.Header.Set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
+	req.Header.Set("referer", config.url)
+
+	// 设置Cookie
+	req.Header.Set("Cookie", config.cookie)
+
+	// 设置自定义headers
+	for key, value := range config.headers {
+		req.Header.Set(key, value)
+	}
+
+	// 设置Content-Type
+	if config.contentType != "" {
+		req.Header.Set("content-type", config.contentType)
+	}
+}
+
+// 执行HTTP请求的通用方法
+func executeRequest(config *requestConfig) (string, error) {
 	// 等待限流器允许请求
 	globalLimiter.wait()
 
 	// 创建 HTTP 客户端
 	client := &http.Client{}
 
-	// 创建请求
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", fmt.Errorf("创建请求失败: %v", err)
-	}
-
-	// 设置 headers
-	req.Header.Set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-	req.Header.Set("accept-language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
-	req.Header.Set("priority", "u=0, i")
-	req.Header.Set("referer", "https://tiku.scratchor.com/question/cat/1/list?chapterId=1")
-	req.Header.Set("sec-ch-ua", `"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"`)
-	req.Header.Set("sec-ch-ua-mobile", "?0")
-	req.Header.Set("sec-ch-ua-platform", "macOS")
-	req.Header.Set("sec-fetch-dest", "document")
-	req.Header.Set("sec-fetch-mode", "navigate")
-	req.Header.Set("sec-fetch-site", "same-origin")
-	req.Header.Set("sec-fetch-user", "?1")
-	req.Header.Set("upgrade-insecure-requests", "1")
-	req.Header.Set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
-
-	// 设置 Cookie
-	req.Header.Set("Cookie", cookie)
-
-	// 发送请求
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("发送请求失败: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// 读取响应内容
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("读取响应失败: %v", err)
-	}
-
-	// 检查响应状态码
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("请求失败，状态码: %d", resp.StatusCode)
-	}
-
-	return string(body), nil
-}
-
-func Post(url, cookie string, data any) (string, error) {
-	// 等待限流器允许请求
-	globalLimiter.wait()
-
-	var (
-		client   = &http.Client{}
-		jsonData []byte
-		err      error
-	)
-
-	// JSON 序列化数据
-	if data != nil {
-		if jsonData, err = json.Marshal(data); err != nil {
+	// 准备请求体
+	var body io.Reader
+	if config.data != nil {
+		if jsonData, err := json.Marshal(config.data); err != nil {
 			return "", fmt.Errorf("JSON 序列化失败: %v", err)
+		} else {
+			body = strings.NewReader(string(jsonData))
 		}
 	}
 
 	// 创建请求
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(jsonData)))
+	req, err := http.NewRequest(config.method, config.url, body)
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %v", err)
 	}
 
-	// 设置 headers
-	req.Header.Set("accept", "application/json, text/javascript, */*; q=0.01")
-	req.Header.Set("accept-language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
-	req.Header.Set("content-type", "application/json; charset=UTF-8")
-	req.Header.Set("origin", "https://tiku.scratchor.com")
-	req.Header.Set("priority", "u=1, i")
-	req.Header.Set("referer", "https://tiku.scratchor.com/question/view/abjyobpc2yhjb2ei")
-	req.Header.Set("sec-ch-ua", `"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"`)
-	req.Header.Set("sec-ch-ua-mobile", "?0")
-	req.Header.Set("sec-ch-ua-platform", "macOS")
-	req.Header.Set("sec-fetch-dest", "empty")
-	req.Header.Set("sec-fetch-mode", "cors")
-	req.Header.Set("sec-fetch-site", "same-origin")
-	req.Header.Set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
-	req.Header.Set("x-requested-with", "XMLHttpRequest")
-
-	// 设置 Cookie
-	req.Header.Set("Cookie", cookie)
+	// 设置headers
+	setCommonHeaders(req, config)
 
 	// 发送请求
 	resp, err := client.Do(req)
@@ -158,7 +126,7 @@ func Post(url, cookie string, data any) (string, error) {
 	defer resp.Body.Close()
 
 	// 读取响应内容
-	body, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("读取响应失败: %v", err)
 	}
@@ -168,5 +136,43 @@ func Post(url, cookie string, data any) (string, error) {
 		return "", fmt.Errorf("请求失败，状态码: %d", resp.StatusCode)
 	}
 
-	return string(body), nil
+	return string(respBody), nil
+}
+
+func Get(url, cookie string) (string, error) {
+	config := &requestConfig{
+		method: "GET",
+		url:    url,
+		cookie: cookie,
+		headers: map[string]string{
+			"accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+			"priority":                  "u=0, i",
+			"sec-fetch-dest":            "document",
+			"sec-fetch-mode":            "navigate",
+			"sec-fetch-user":            "?1",
+			"upgrade-insecure-requests": "1",
+		},
+	}
+
+	return executeRequest(config)
+}
+
+func Post(url, cookie string, data any) (string, error) {
+	config := &requestConfig{
+		method:      "POST",
+		url:         url,
+		cookie:      cookie,
+		data:        data,
+		contentType: "application/json; charset=UTF-8",
+		headers: map[string]string{
+			"accept":           "application/json, text/javascript, */*; q=0.01",
+			"origin":           "https://tiku.scratchor.com",
+			"priority":         "u=1, i",
+			"sec-fetch-dest":   "empty",
+			"sec-fetch-mode":   "cors",
+			"x-requested-with": "XMLHttpRequest",
+		},
+	}
+
+	return executeRequest(config)
 }
