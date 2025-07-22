@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -148,18 +149,18 @@ func processFile(client *api.Client, path string, bar *progressbar.ProgressBar) 
 	// 如果有更新，保存文件
 	if needUpdate {
 		var newContent []byte
+		var err error
 		if isJSON {
-			// 如果是 JSON 文件，先解析再格式化
-			var jsonObj interface{}
-			if err := json.Unmarshal([]byte(contentStr), &jsonObj); err != nil {
-				return fmt.Errorf("解析更新后的 JSON 失败 %s: %w", path, err)
-			}
-			newContent, err = json.MarshalIndent(jsonObj, "", "  ")
-			if err != nil {
+			var buf bytes.Buffer
+			encoder := json.NewEncoder(&buf)
+			encoder.SetEscapeHTML(false)
+			encoder.SetIndent("", "  ")
+			if err := encoder.Encode(jsonData); err != nil {
 				return fmt.Errorf("序列化 JSON 失败 %s: %w", path, err)
 			}
+			newContent = buf.Bytes()
 		} else {
-			newContent = []byte(contentStr)
+			newContent = content
 		}
 
 		err = os.WriteFile(path, newContent, 0644)
