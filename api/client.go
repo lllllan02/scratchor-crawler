@@ -73,3 +73,28 @@ func (client *Client) Post(url string, data any) (string, error) {
 		},
 	))
 }
+
+func (client *Client) Image(url string) ([]byte, error) {
+	body, err := client.Client.Get(url, http_client.WithRequestHeaders(
+		map[string]string{
+			"accept":             "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+			"accept-language":    "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+			"cache-control":      "no-cache",
+			"pragma":             "no-cache",
+			"priority":           "u=2, i",
+			"referer":            "https://tiku.scratchor.com/",
+			"sec-ch-ua":          `"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"`,
+			"sec-ch-ua-mobile":   "?0",
+			"sec-ch-ua-platform": "macOS",
+			"sec-fetch-dest":     "image",
+			"sec-fetch-mode":     "no-cors",
+			"sec-fetch-site":     "same-site",
+			"user-agent":         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
+		},
+	))
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(body), nil
+}
