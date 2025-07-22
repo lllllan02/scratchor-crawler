@@ -31,7 +31,19 @@ func (c *Crawler) Force() *Crawler {
 func (c *Crawler) Cats() error {
 	fmt.Println("开始爬取所有分类...")
 
-	for i := 1; i <= 10; i++ {
+	// 如果不是强制模式，查找已存在的最大ID
+	startID := 1
+	if !c.force {
+		maxID, err := c.findMaxCatID()
+		if err != nil {
+			fmt.Printf("查找最大分类ID失败: %v，将从头开始爬取\n", err)
+		} else {
+			startID = maxID
+			fmt.Printf("找到最大分类ID: %d，将从 %d 开始继续爬取\n", maxID, startID)
+		}
+	}
+
+	for i := startID; i <= 10; i++ {
 		fmt.Printf("正在爬取分类 %d/10...\n", i)
 		if err := c.Cat(i); err != nil {
 			return err
@@ -41,6 +53,42 @@ func (c *Crawler) Cats() error {
 
 	fmt.Println("所有分类爬取完成")
 	return nil
+}
+
+// 查找已存在的最大分类ID
+func (c *Crawler) findMaxCatID() (int, error) {
+	// 检查data目录是否存在
+	if _, err := os.Stat("data"); os.IsNotExist(err) {
+		return 0, fmt.Errorf("data目录不存在")
+	}
+
+	maxID := 0
+	entries, err := os.ReadDir("data")
+	if err != nil {
+		return 0, fmt.Errorf("读取data目录失败: %w", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// 解析目录名中的ID
+		var id int
+		if _, err := fmt.Sscanf(entry.Name(), "cat_%d", &id); err != nil {
+			continue
+		}
+
+		if id > maxID {
+			maxID = id
+		}
+	}
+
+	if maxID == 0 {
+		return 0, fmt.Errorf("未找到有效的分类目录")
+	}
+
+	return maxID, nil
 }
 
 func (c *Crawler) Cat(id int) error {
@@ -54,9 +102,30 @@ func (c *Crawler) Cat(id int) error {
 
 	fmt.Printf("分类 %d 共有 %d 个章节\n", id, len(chatpters))
 
-	for i, chapter := range chatpters {
-		fmt.Printf("正在爬取分类 %d 的章节 %d/%d: %s\n", id, i+1, len(chatpters), chapter)
-		if err := c.Chapter(chapter); err != nil {
+	// 如果不是强制模式，查找已存在的最大chapter
+	startIdx := 0
+	if !c.force {
+		maxChapter, err := c.findMaxChapter(id)
+		if err != nil {
+			fmt.Printf("查找最大章节失败: %v，将从头开始爬取\n", err)
+		} else {
+			// 找到对应的索引
+			for i, chapter := range chatpters {
+				var cat, chap int
+				if _, err := fmt.Sscanf(chapter, "https://tiku.scratchor.com/question/cat/%d/list?chapterId=%d", &cat, &chap); err == nil {
+					if chap == maxChapter {
+						startIdx = i
+						break
+					}
+				}
+			}
+			fmt.Printf("找到最大章节: %d，将从索引 %d 开始继续爬取\n", maxChapter, startIdx)
+		}
+	}
+
+	for i := startIdx; i < len(chatpters); i++ {
+		fmt.Printf("正在爬取分类 %d 的章节 %d/%d: %s\n", id, i+1, len(chatpters), chatpters[i])
+		if err := c.Chapter(chatpters[i]); err != nil {
 			return err
 		}
 		fmt.Printf("分类 %d 的章节 %d/%d 爬取完成\n", id, i+1, len(chatpters))
@@ -65,6 +134,44 @@ func (c *Crawler) Cat(id int) error {
 	fmt.Printf("分类 %d 所有章节爬取完成\n", id)
 
 	return nil
+}
+
+// 查找已存在的最大章节ID
+func (c *Crawler) findMaxChapter(catID int) (int, error) {
+	// 检查分类目录是否存在
+	path := fmt.Sprintf("data/cat_%d", catID)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return 0, fmt.Errorf("分类目录不存在")
+	}
+
+	// 读取目录下的所有文件夹
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return 0, fmt.Errorf("读取目录失败: %w", err)
+	}
+
+	maxChapter := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// 解析目录名中的chapter ID
+		var chapter int
+		if _, err := fmt.Sscanf(entry.Name(), "chapter_%d", &chapter); err != nil {
+			continue
+		}
+
+		if chapter > maxChapter {
+			maxChapter = chapter
+		}
+	}
+
+	if maxChapter == 0 {
+		return 0, fmt.Errorf("未找到有效的章节目录")
+	}
+
+	return maxChapter, nil
 }
 
 func (c *Crawler) Chapter(url string) error {

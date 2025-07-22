@@ -6,6 +6,7 @@ toolchain go1.23.11
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.3
+	github.com/lllllan02/http-client v0.0.0-20250722011620-5754aa506037
 	github.com/stretchr/testify v1.10.0
 )
 
