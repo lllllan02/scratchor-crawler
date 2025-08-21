@@ -61,6 +61,9 @@ func getQuestion(doc *goquery.Selection) *Question {
 	if alias, exists := doc.Find("div.question").Attr("data-question-alias"); exists {
 		question.Alias = alias
 	}
+	if alias, exists := doc.Find("div.body").Attr("data-question-alias"); exists {
+		question.Alias = alias
+	}
 
 	// 获取题目类型
 	doc.Find("div.pb-question-view .title").Each(func(i int, s *goquery.Selection) {
