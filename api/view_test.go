@@ -19,10 +19,10 @@ func TestGetView(t *testing.T) {
 		view, err := client.GetView(url)
 		assert.NoError(t, err)
 
-		fmt.Printf("view.Tags: %+v\n", view.Tags)
+		fmt.Printf("\nview.Tags: %+v\n", view.Tags)
 		fmt.Printf("view.Question: %+v\n", view.Question)
 		for _, item := range view.Items {
-			fmt.Printf("item: %+v\n", item)
+			fmt.Printf("item: %+v\n\n", item)
 		}
 	}
 }

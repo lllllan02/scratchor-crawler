@@ -31,8 +31,17 @@ func (client *Client) GetView(url string) (*View, error) {
 	}
 
 	view := &View{}
-	// 获取题目
-	view.Question = getQuestion(doc.Find("div.pb-question-view"))
+
+	// 先获取子题目（在移除之前）
+	doc.Find("div.question-items .pb-question-view").Each(func(i int, s *goquery.Selection) {
+		view.Items = append(view.Items, getQuestion(s))
+	})
+
+	// 获取主干题目（排除子题部分）
+	mainQuestionDoc := doc.Find("div.pb-question-view").First()
+	// 移除子题部分，确保主干题目不包含子题内容
+	mainQuestionDoc.Find("div.question-items").Remove()
+	view.Question = getQuestion(mainQuestionDoc)
 
 	// 获取题目标签
 	doc.Find("div.ub-panel .body span").Each(func(i int, s *goquery.Selection) {
@@ -40,11 +49,6 @@ func (client *Client) GetView(url string) (*View, error) {
 		if text != "" {
 			view.Tags = append(view.Tags, text)
 		}
-	})
-
-	// 获取子题目
-	doc.Find("div.question-items .pb-question-view").Each(func(i int, s *goquery.Selection) {
-		view.Items = append(view.Items, getQuestion(s))
 	})
 
 	return view, nil
