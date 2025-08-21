@@ -15,40 +15,103 @@ var (
 	ErrAPIError           = errors.New("API请求失败")
 )
 
-func (client *Client) GetAnswer(id string) (string, error) {
+// AnswerResult 表示答案和解析的结果
+type AnswerResult struct {
+	Answer   []string `json:"answer"`
+	Analysis string   `json:"analysis"`
+}
+
+func (client *Client) GetAnswer(id string, questionType string) (*AnswerResult, error) {
 	url := fmt.Sprintf("https://tiku.scratchor.com/question/answer/%s", id)
 
 	// 获取 html
 	body, err := client.Post(url, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// 解析 JSON 响应
 	html, err := parseAnswerResponse(body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// 解析 html
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// 从 JSON 响应中提取答案
+	// 提取答案
+	answer, _ := extractAnswer(doc, questionType)
+
+	// 提取解析
+	analysis, _ := extractAnalysis(doc)
+
+	return &AnswerResult{Answer: answer, Analysis: analysis}, nil
+}
+
+// extractAnswer 根据题型提取答案内容
+func extractAnswer(doc *goquery.Document, questionType string) ([]string, error) {
 	answerSelection := doc.Find("div.answer-body")
 	if answerSelection.Length() == 0 {
-		return "", fmt.Errorf("未找到答案内容")
+		return nil, fmt.Errorf("未找到答案内容")
 	}
 
-	// 获取答案文本并去除空白字符
-	answer := strings.TrimSpace(answerSelection.Text())
-	if answer == "" {
-		return "", fmt.Errorf("答案内容为空")
+	// 根据题型进行不同的解析逻辑
+	switch questionType {
+	case "单选题", "多选题", "判断题":
+		answerText := strings.TrimSpace(answerSelection.Text())
+
+		// 如果是选项，将中文逗号转换为英文逗号，并清理空格
+		answerText = strings.ReplaceAll(answerText, "，", ",")
+		answerText = strings.ReplaceAll(answerText, " ", "")
+		return strings.Split(answerText, ","), nil
+
+	case "填空题":
+		// 填空题：提取每个段落作为答案项
+		paragraphs := answerSelection.Find("p")
+		var answers []string
+		paragraphs.Each(func(i int, s *goquery.Selection) {
+			text := strings.TrimSpace(s.Text())
+			if text != "" {
+				answers = append(answers, text)
+			}
+		})
+		return answers, nil
+
+	case "问答题":
+		// 问答题、编程题：保留完整的HTML内容
+		answerHTML, err := answerSelection.Html()
+		if err != nil {
+			return nil, fmt.Errorf("获取答案HTML失败: %v", err)
+		}
+		return []string{strings.TrimSpace(answerHTML)}, nil
+
+	default:
+		// 默认情况：保留完整HTML内容
+		answerHTML, err := answerSelection.Html()
+		if err != nil {
+			return nil, fmt.Errorf("获取答案HTML失败: %v", err)
+		}
+		return []string{strings.TrimSpace(answerHTML)}, nil
+	}
+}
+
+// extractAnalysis 提取解析内容
+func extractAnalysis(doc *goquery.Document) (string, error) {
+	analysisSelection := doc.Find("div.analysis-body")
+	if analysisSelection.Length() == 0 {
+		return "", fmt.Errorf("未找到解析内容")
 	}
 
-	return answer, nil
+	// 如果是文本答案，保留完整的HTML内容（包括图片等）
+	answerHTML, err := analysisSelection.Html()
+	if err != nil {
+		return "", fmt.Errorf("获取答案HTML失败: %v", err)
+	}
+
+	return strings.TrimSpace(answerHTML), nil
 }
 
 // parseAnswerResponse 解析答案API的JSON响应
