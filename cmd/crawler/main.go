@@ -43,7 +43,7 @@ func Cat(id int) error {
 			progressbar.OptionEnableColorCodes(true),
 			progressbar.OptionShowBytes(false),
 			progressbar.OptionSetWidth(50),
-			progressbar.OptionSetDescription(fmt.Sprintf("%s获取练习「%s」%d/%d%s", utils.ColorCyan, link.Title, i+1, len(cat.Links), utils.ColorReset)),
+			progressbar.OptionSetDescription(fmt.Sprintf("%s获取练习「%s」%d/%d: %d 个题目%s", utils.ColorCyan, link.Title, i+1, len(cat.Links), link.Count, utils.ColorReset)),
 			progressbar.OptionSetTheme(progressbar.Theme{
 				Saucer:        "[green]=[reset]",
 				SaucerHead:    "[green]>[reset]",
