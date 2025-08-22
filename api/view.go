@@ -71,19 +71,39 @@ func getQuestion(doc *goquery.Selection) *Question {
 	})
 
 	// 获取题目内容
-	doc.Find("div.question .ub-html").Each(func(i int, s *goquery.Selection) {
-		question.Body, _ = s.Html()
-		question.Body = strings.TrimSpace(question.Body)
-	})
+	question.Body = cleanHTML(doc.Find("div.question .ub-html").First())
 
 	// 获取选项
 	doc.Find("div.question .option .item").Each(func(i int, s *goquery.Selection) {
-		html, _ := s.Html()
-		html, _ = s.Find(".choice").Remove().End().Html()
-		question.Option = append(question.Option, strings.TrimSpace(html))
+		// 移除选择器元素
+		cleanOption := s.Clone()
+		cleanOption.Find(".choice").Remove()
+		question.Option = append(question.Option, cleanHTML(cleanOption))
 	})
 
 	return question
+}
+
+// cleanHTML 清理HTML内容，去除样式标签和属性
+func cleanHTML(selection *goquery.Selection) string {
+	// 克隆选择器，避免修改原始数据
+	clean := selection.Clone()
+
+	// 移除样式标签
+	clean.Find("style, script, link, meta").Remove()
+
+	// 移除所有元素的样式相关属性
+	clean.Find("*").Each(func(i int, s *goquery.Selection) {
+		s.RemoveAttr("width")
+		s.RemoveAttr("height")
+		s.RemoveAttr("style")
+		s.RemoveAttr("class")
+		s.RemoveAttr("id")
+	})
+
+	// 获取清理后的HTML
+	html, _ := clean.Html()
+	return strings.TrimSpace(html)
 }
 
 func getType(t string) string {
