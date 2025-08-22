@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -80,13 +79,13 @@ func ProcessFiles(root string, handler FileHandler) error {
 
 	// 处理每个目录
 	for _, dirInfo := range dirs {
-		fmt.Printf("\n%s开始处理目录%s: %s (%d 个文件)\n", ColorCyan, ColorReset, dirInfo.Path, dirInfo.FileCount)
-
 		// 创建该目录的进度条
-		bar := progressbar.NewOptions(dirInfo.FileCount,
+		bar := progressbar.NewOptions(
+			dirInfo.FileCount,
 			progressbar.OptionEnableColorCodes(true),
 			progressbar.OptionShowBytes(false),
-			progressbar.OptionSetWidth(15),
+			progressbar.OptionSetWidth(50),
+			progressbar.OptionSetDescription(fmt.Sprintf("%s处理目录「%s」: %d 个文件%s", ColorCyan, dirInfo.Path, dirInfo.FileCount, ColorReset)),
 			progressbar.OptionSetTheme(progressbar.Theme{
 				Saucer:        "[green]=[reset]",
 				SaucerHead:    "[green]>[reset]",
@@ -98,15 +97,9 @@ func ProcessFiles(root string, handler FileHandler) error {
 
 		// 处理目录中的每个文件
 		for _, path := range dirInfo.Files {
-			// 读取文件
-			var view api.View
-			content, err := ReadFile(path)
+			view, err := ReadJSON[api.View](path)
 			if err != nil {
 				fmt.Printf("%s读取文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
-				return err
-			}
-			if err := json.Unmarshal(content, &view); err != nil {
-				fmt.Printf("%s解析文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
 				return err
 			}
 
@@ -119,12 +112,10 @@ func ProcessFiles(root string, handler FileHandler) error {
 
 			// 写入文件
 			if needSave {
-				content, err = json.Marshal(view)
-				if err != nil {
-					fmt.Printf("%s序列化文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
+				if err := WriteJSON(path, view); err != nil {
+					fmt.Printf("%s写入文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
 					return err
 				}
-				WriteFile(path, content)
 
 				progressbar.Bprintln(bar, fmt.Sprintf("更新文件「%s」", filepath.Base(path)))
 			}

@@ -12,7 +12,7 @@ var client *api.Client
 
 func main() {
 	var err error
-	if client, err = api.NewClient("9c8adef9772544421fc21404af7ed346=e6f5696bd5ff493578540e8afee89af8; ssid=eyJpdiI6IjBRYUlUYzdNeFM4RGhjZ2pOT0RNWnc9PSIsInZhbHVlIjoiZUUzSW5NcTU0bFwvaVYwRFwvaVFIRXhzZldUYWFtcVdVMkpETlZKQmxTb1lkaWNKSGxmT05lVmdNMjA1XC8rQVZhXC84SjY1TG5aWGJRSGlkU0lUblJaZjhBPT0iLCJtYWMiOiI3YWVmYTk0NDQxZjg3YTFiMDlkYjhlNWUwMDNmMzFhM2FkNjBmZWY0Yzg1OWVhYjQ1OTQ0M2E3ODRhNjkzMzI0In0%3D"); err != nil {
+	if client, err = api.NewClient("Hm_lvt_22880f1d42e3788b94e7aa1361ea923a=1755757549; HMACCOUNT=4D5E77D5BB397FC9; 333decb516a63de949aa73f356ff0515=51967059785189c5bd710720adcf8afb; ssid=eyJpdiI6ImFLeDVPd3AyVVExVlR2VzhpRGVTdXc9PSIsInZhbHVlIjoiNXF3Wk10TE40OUl2OEhCY252cFVjT0dZVmd2eUdrRlNiXC85QjY4Q3Ztdk5HWTFLaTlVTjJSS1hZcUxrd1RDNXZSZ3BqOVN2XC8yc1NSTFBtdlBBTjdpdz09IiwibWFjIjoiMDU3MzllNjBmMmZlYzFjZTQ5N2EwMmI1NjdkNmE3N2RkNTY5ZDM2YjAyOGY2ZjhlZDg2YWM3MzkzODdiMjMwMiJ9; Hm_lpvt_22880f1d42e3788b94e7aa1361ea923a=1755854532"); err != nil {
 		fmt.Printf("%s创建客户端失败%s: %v\n", utils.ColorRed, utils.ColorReset, err)
 		os.Exit(1)
 	}
