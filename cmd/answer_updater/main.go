@@ -16,23 +16,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 配置图片下载器
-	config := utils.ImageDownloaderConfig{
+	// 配置答案更新器
+	config := utils.AnswerUpdaterConfig{
 		DataDir: "data",
-		ImgDir:  "image",
 		Client:  client,
 	}
 
-	// 创建图片下载器处理函数
-	imageHandler := utils.CreateImageDownloader(config)
+	// 创建答案更新器处理函数
+	answerHandler := utils.CreateAnswerUpdater(config)
 
 	// 使用通用文件遍历器处理文件
-	fmt.Printf("%s开始图片下载任务%s\n", utils.ColorCyan, utils.ColorReset)
-	err = utils.ProcessFiles("data", imageHandler, "图片下载器")
+	fmt.Printf("%s开始答案更新任务%s\n", utils.ColorCyan, utils.ColorReset)
+	err = utils.ProcessFiles("data", answerHandler, "答案更新器")
 	if err != nil {
-		fmt.Printf("%s图片下载失败%s: %v\n", utils.ColorRed, utils.ColorReset, err)
+		fmt.Printf("%s答案更新失败%s: %v\n", utils.ColorRed, utils.ColorReset, err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("%s图片下载任务完成%s\n", utils.ColorGreen, utils.ColorReset)
+	fmt.Printf("%s答案更新任务完成%s\n", utils.ColorGreen, utils.ColorReset)
 }
