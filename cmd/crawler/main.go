@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -122,20 +120,9 @@ func View(path, url string) error {
 		return err
 	}
 
-	// 将 view 转换为 JSON，不对字符进行转义
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(view); err != nil {
-		fmt.Printf("%sJSON 序列化失败: %v%s\n", utils.ColorRed, err, utils.ColorReset)
-		return err
-	}
-	data := buf.Bytes()
-
-	// 写入文件
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		fmt.Printf("%s写入文件失败: %v%s\n", utils.ColorRed, err, utils.ColorReset)
+	// 将 view 转换为 JSON 并写入文件
+	if err := utils.WriteJSON(filePath, view); err != nil {
+		fmt.Printf("%s%s%s\n", utils.ColorRed, err, utils.ColorReset)
 		return err
 	}
 
