@@ -39,13 +39,13 @@ func Cat(id int) error {
 	}
 
 	fmt.Printf("\n%s获取专题「%s」: %d 个章节%s\n", utils.ColorCyan, cat.Title, len(cat.Links), utils.ColorReset)
-	for _, link := range cat.Links {
+	for i, link := range cat.Links {
 		bar := progressbar.NewOptions(
 			link.Count,
 			progressbar.OptionEnableColorCodes(true),
 			progressbar.OptionShowBytes(false),
 			progressbar.OptionSetWidth(50),
-			progressbar.OptionSetDescription(fmt.Sprintf("%s获取练习「%s」%s", utils.ColorCyan, link.Title, utils.ColorReset)),
+			progressbar.OptionSetDescription(fmt.Sprintf("%s获取练习「%s」%d/%d%s", utils.ColorCyan, link.Title, i+1, len(cat.Links), utils.ColorReset)),
 			progressbar.OptionSetTheme(progressbar.Theme{
 				Saucer:        "[green]=[reset]",
 				SaucerHead:    "[green]>[reset]",
@@ -60,6 +60,7 @@ func Cat(id int) error {
 		}
 
 		bar.Finish()
+		fmt.Println()
 	}
 
 	return nil
