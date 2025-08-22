@@ -23,178 +23,49 @@ func main() {
 }
 
 func Cats() error {
-	startID := 1
-	if maxID, err := findMaxCatID(); err == nil {
-		startID = maxID
-	}
-
-	// 创建分类爬取进度条
-	totalCats := 10 - startID + 1
-	catBar := progressbar.NewOptions(totalCats,
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionShowBytes(false),
-		progressbar.OptionSetWidth(15),
-		progressbar.OptionSetDescription(fmt.Sprintf("%s爬取分类进度%s", utils.ColorCyan, utils.ColorReset)),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[green]=[reset]",
-			SaucerHead:    "[green]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
-	)
-
-	for i := startID; i <= 10; i++ {
-		catBar.Describe(fmt.Sprintf("%s正在爬取分类 %d/10%s", utils.ColorBlue, i, utils.ColorReset))
-
+	for i := 1; i <= 10; i++ {
 		if err := Cat(i); err != nil {
-			catBar.Describe(fmt.Sprintf("%s分类 %d 爬取失败%s", utils.ColorRed, i, utils.ColorReset))
 			return err
 		}
-
-		catBar.Describe(fmt.Sprintf("%s分类 %d 爬取完成%s", utils.ColorGreen, i, utils.ColorReset))
-		_ = catBar.Add(1)
 	}
-
-	_ = catBar.Finish()
 	return nil
 }
 
-// 查找已存在的最大分类ID
-func findMaxCatID() (int, error) {
-	// 检查data目录是否存在
-	if _, err := os.Stat("data"); os.IsNotExist(err) {
-		return 0, fmt.Errorf("data目录不存在")
-	}
-
-	maxID := 0
-	entries, err := os.ReadDir("data")
-	if err != nil {
-		return 0, fmt.Errorf("读取data目录失败: %w", err)
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		// 解析目录名中的ID
-		var id int
-		if _, err := fmt.Sscanf(entry.Name(), "cat_%d", &id); err != nil {
-			continue
-		}
-
-		if id > maxID {
-			maxID = id
-		}
-	}
-
-	if maxID == 0 {
-		return 0, fmt.Errorf("未找到有效的分类目录")
-	}
-
-	return maxID, nil
-}
-
 func Cat(id int) error {
-	links, err := client.GetCat(id)
+	cat, err := client.GetCat(id)
 	if err != nil {
 		fmt.Printf("%sfailed crawl cat %d: %v%s\n", utils.ColorRed, id, err, utils.ColorReset)
 		return err
 	}
 
-	// 提取链接列表
-	var chatpters []string
-	for _, link := range links {
-		chatpters = append(chatpters, link.URL)
-	}
+	fmt.Printf("\n%s获取专题「%s」: %d 个章节%s\n", utils.ColorCyan, cat.Title, len(cat.Links), utils.ColorReset)
+	for _, link := range cat.Links {
+		bar := progressbar.NewOptions(
+			link.Count,
+			progressbar.OptionEnableColorCodes(true),
+			progressbar.OptionShowBytes(false),
+			progressbar.OptionSetWidth(50),
+			progressbar.OptionSetDescription(fmt.Sprintf("%s获取练习「%s」%s", utils.ColorCyan, link.Title, utils.ColorReset)),
+			progressbar.OptionSetTheme(progressbar.Theme{
+				Saucer:        "[green]=[reset]",
+				SaucerHead:    "[green]>[reset]",
+				SaucerPadding: " ",
+				BarStart:      "[",
+				BarEnd:        "]",
+			}),
+		)
 
-	startIdx := 0
-	if maxChapter, err := findMaxChapter(id); err == nil {
-		// 找到对应的索引
-		for i, chapter := range chatpters {
-			var cat, chap int
-			if _, err := fmt.Sscanf(chapter, "https://tiku.scratchor.com/question/cat/%d/list?chapterId=%d", &cat, &chap); err == nil {
-				if chap == maxChapter {
-					startIdx = i
-					break
-				}
-			}
-		}
-	}
-
-	// 创建章节爬取进度条
-	totalChapters := len(chatpters) - startIdx
-	chapterBar := progressbar.NewOptions(totalChapters,
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionShowBytes(false),
-		progressbar.OptionSetWidth(15),
-		progressbar.OptionSetDescription(fmt.Sprintf("%s分类 %d 章节爬取进度%s", utils.ColorCyan, id, utils.ColorReset)),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[green]=[reset]",
-			SaucerHead:    "[green]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
-	)
-
-	for i := startIdx; i < len(chatpters); i++ {
-		chapterBar.Describe(fmt.Sprintf("%s正在爬取分类 %d 的章节 %d/%d: %s%s", utils.ColorBlue, id, i+1, len(chatpters), chatpters[i], utils.ColorReset))
-
-		if err := Chapter(chatpters[i]); err != nil {
-			chapterBar.Describe(fmt.Sprintf("%s分类 %d 的章节 %d/%d 爬取失败%s", utils.ColorRed, id, i+1, len(chatpters), utils.ColorReset))
+		if err := Chapter(bar, link.URL); err != nil {
 			return err
 		}
 
-		chapterBar.Describe(fmt.Sprintf("%s分类 %d 的章节 %d/%d 爬取完成%s", utils.ColorGreen, id, i+1, len(chatpters), utils.ColorReset))
-		_ = chapterBar.Add(1)
+		bar.Finish()
 	}
-
-	_ = chapterBar.Finish()
 
 	return nil
 }
 
-// 查找已存在的最大章节ID
-func findMaxChapter(catID int) (int, error) {
-	// 检查分类目录是否存在
-	path := fmt.Sprintf("data/cat_%d", catID)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return 0, fmt.Errorf("分类目录不存在")
-	}
-
-	// 读取目录下的所有文件夹
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return 0, fmt.Errorf("读取目录失败: %w", err)
-	}
-
-	maxChapter := 0
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		// 解析目录名中的chapter ID
-		var chapter int
-		if _, err := fmt.Sscanf(entry.Name(), "chapter_%d", &chapter); err != nil {
-			continue
-		}
-
-		if chapter > maxChapter {
-			maxChapter = chapter
-		}
-	}
-
-	if maxChapter == 0 {
-		return 0, fmt.Errorf("未找到有效的章节目录")
-	}
-
-	return maxChapter, nil
-}
-
-func Chapter(url string) error {
+func Chapter(bar *progressbar.ProgressBar, url string) error {
 	// 从 URL 中提取 cat, chapter
 	var cat, chapter int
 	if _, err := fmt.Sscanf(url, "https://tiku.scratchor.com/question/cat/%d/list?chapterId=%d", &cat, &chapter); err != nil {
@@ -203,58 +74,27 @@ func Chapter(url string) error {
 	path := fmt.Sprintf("data/cat_%d/chapter_%d", cat, chapter)
 
 	// 创建目录
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return fmt.Errorf("创建目录失败: %v", err)
-	}
+	os.MkdirAll(path, 0755)
 
-	pageNum := 1
-	totalViews := 0
-
-	for {
+	for pageNum := 1; url != ""; {
 		views, next, err := client.GetChapter(url)
 		if err != nil {
-			fmt.Printf("%sfailed crawl chapter %s: %v%s\n", utils.ColorRed, url, err, utils.ColorReset)
+			fmt.Printf("%s获取练习「%s」失败: %v%s\n", utils.ColorRed, url, err, utils.ColorReset)
 			return err
 		}
 
 		// 创建题目处理进度条
-		if len(views) > 0 {
-			viewBar := progressbar.NewOptions(len(views),
-				progressbar.OptionEnableColorCodes(true),
-				progressbar.OptionShowBytes(false),
-				progressbar.OptionSetWidth(15),
-				progressbar.OptionSetDescription(fmt.Sprintf("%s第 %d 页题目处理进度%s", utils.ColorCyan, pageNum, utils.ColorReset)),
-				progressbar.OptionSetTheme(progressbar.Theme{
-					Saucer:        "[green]=[reset]",
-					SaucerHead:    "[green]>[reset]",
-					SaucerPadding: " ",
-					BarStart:      "[",
-					BarEnd:        "]",
-				}),
-			)
+		for _, view := range views {
+			progressbar.Bprintln(bar, fmt.Sprintf("获取题目「%s」", view))
 
-			for i, view := range views {
-				viewBar.Describe(fmt.Sprintf("%s正在处理题目 %d/%d: %s%s", utils.ColorBlue, i+1, len(views), view, utils.ColorReset))
-
-				if err := View(path, view); err != nil {
-					viewBar.Describe(fmt.Sprintf("%s题目 %d/%d 处理失败%s", utils.ColorRed, i+1, len(views), utils.ColorReset))
-					return err
-				}
-
-				viewBar.Describe(fmt.Sprintf("%s题目 %d/%d 处理完成%s", utils.ColorGreen, i+1, len(views), utils.ColorReset))
-				_ = viewBar.Add(1)
+			if err := View(path, view); err != nil {
+				return err
 			}
 
-			_ = viewBar.Finish()
+			bar.Add(1)
 		}
 
-		totalViews += len(views)
-
-		if next == "" {
-			break
-		}
-		url = next
-		pageNum++
+		url, pageNum = next, pageNum+1
 	}
 
 	return nil
@@ -264,7 +104,8 @@ func View(path, url string) error {
 	// 从 URL 中提取 alias
 	var alias string
 	if _, err := fmt.Sscanf(url, "https://tiku.scratchor.com/question/view/%s", &alias); err != nil {
-		return fmt.Errorf("解析 URL 中的 alias 失败: %v", err)
+		fmt.Printf("%s解析 URL 中的 alias 失败: %v%s\n", utils.ColorRed, err, utils.ColorReset)
+		return err
 	}
 
 	// 构建文件路径
@@ -276,7 +117,7 @@ func View(path, url string) error {
 
 	view, err := client.GetView(url)
 	if err != nil {
-		fmt.Printf("%sfailed crawl view %s: %v%s\n", utils.ColorRed, url, err, utils.ColorReset)
+		fmt.Printf("%s获取题目「%s」失败: %v%s\n", utils.ColorRed, url, err, utils.ColorReset)
 		return err
 	}
 
@@ -286,13 +127,15 @@ func View(path, url string) error {
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(view); err != nil {
-		return fmt.Errorf("JSON 序列化失败: %v", err)
+		fmt.Printf("%sJSON 序列化失败: %v%s\n", utils.ColorRed, err, utils.ColorReset)
+		return err
 	}
 	data := buf.Bytes()
 
 	// 写入文件
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return fmt.Errorf("写入文件失败: %v", err)
+		fmt.Printf("%s写入文件失败: %v%s\n", utils.ColorRed, err, utils.ColorReset)
+		return err
 	}
 
 	return nil
