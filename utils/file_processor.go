@@ -119,7 +119,13 @@ func ProcessFiles(root string, handler FileHandler) error {
 
 			// 写入文件
 			if needSave {
+				content, err = json.Marshal(view)
+				if err != nil {
+					fmt.Printf("%s序列化文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
+					return err
+				}
 				WriteFile(path, content)
+
 				progressbar.Bprintln(bar, fmt.Sprintf("更新文件「%s」", filepath.Base(path)))
 			}
 
