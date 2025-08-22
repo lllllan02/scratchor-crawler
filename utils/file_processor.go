@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 
+	"github.com/lllllan02/scratchor-crawler/api"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -28,7 +30,7 @@ type DirInfo struct {
 
 // 文件处理函数类型
 // 参数：文件路径，返回：是否需要保存文件，错误信息
-type FileHandler func(filePath string) (bool, error)
+type FileHandler func(view *api.View) (bool, error)
 
 // 获取目录信息
 func GetDirInfo(root string) (map[string]*DirInfo, error) {
@@ -95,33 +97,40 @@ func ProcessFiles(root string, handler FileHandler) error {
 		)
 
 		// 处理目录中的每个文件
-		for fileIdx, path := range dirInfo.Files {
-			// 更新进度条描述
-			bar.Describe(fmt.Sprintf("%s正在处理%s (%d/%d) %s", ColorCyan, ColorReset, fileIdx+1, dirInfo.FileCount, filepath.Base(path)))
+		for _, path := range dirInfo.Files {
+			// 读取文件
+			var view api.View
+			content, err := ReadFile(path)
+			if err != nil {
+				fmt.Printf("%s读取文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
+				return err
+			}
+			if err := json.Unmarshal(content, &view); err != nil {
+				fmt.Printf("%s解析文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
+				return err
+			}
 
 			// 调用自定义处理函数
-			needSave, err := handler(path)
+			needSave, err := handler(&view)
 			if err != nil {
-				bar.Describe(fmt.Sprintf("%s处理失败%s %s", ColorRed, ColorReset, filepath.Base(path)))
 				fmt.Printf("%s处理文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
 				return err
 			}
 
+			// 写入文件
 			if needSave {
-				bar.Describe(fmt.Sprintf("%s已更新%s %s", ColorBlue, ColorReset, filepath.Base(path)))
-			} else {
-				bar.Describe(fmt.Sprintf("%s无需更新%s %s", ColorYellow, ColorReset, filepath.Base(path)))
+				WriteFile(path, content)
+				progressbar.Bprintln(bar, fmt.Sprintf("更新文件「%s」", filepath.Base(path)))
 			}
 
 			// 更新进度条
-			_ = bar.Add(1)
+			bar.Add(1)
 		}
 
-		_ = bar.Finish()
-		fmt.Printf("%s目录处理完成%s: %s\n", ColorGreen, ColorReset, dirInfo.Path)
+		bar.Finish()
+		fmt.Println()
 	}
 
-	fmt.Printf("\n%s所有文件处理完成%s\n", ColorGreen, ColorReset)
 	return nil
 }
 

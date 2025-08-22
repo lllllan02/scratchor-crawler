@@ -13,10 +13,12 @@ type View struct {
 }
 
 type Question struct {
-	Alias  string
-	Type   string
-	Body   string
-	Option []string
+	Alias    string   // 题目别名
+	Type     string   // 题目类型
+	Body     string   // 题目内容
+	Analysis string   // 题目解析
+	Option   []string // 题目选项
+	Answer   []string // 题目答案
 }
 
 func (client *Client) GetView(url string) (*View, error) {
