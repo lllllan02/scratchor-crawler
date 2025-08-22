@@ -7,56 +7,61 @@ import (
 	"os"
 
 	"github.com/lllllan02/scratchor-crawler/api"
+	"github.com/lllllan02/scratchor-crawler/utils"
+	"github.com/schollz/progressbar/v3"
 )
 
-type Crawler struct {
-	client *api.Client
-	force  bool
-}
+var client *api.Client
 
-func NewCrawler(cookie string) (*Crawler, error) {
-	client, err := api.NewClient(cookie)
-	if err != nil {
-		return nil, err
+func main() {
+	var err error
+	if client, err = api.NewClient("9c8adef9772544421fc21404af7ed346=e6f5696bd5ff493578540e8afee89af8; ssid=eyJpdiI6IjBRYUlUYzdNeFM4RGhjZ2pOT0RNWnc9PSIsInZhbHVlIjoiZUUzSW5NcTU0bFwvaVYwRFwvaVFIRXhzZldUYWFtcVdVMkpETlZKQmxTb1lkaWNKSGxmT05lVmdNMjA1XC8rQVZhXC84SjY1TG5aWGJRSGlkU0lUblJaZjhBPT0iLCJtYWMiOiI3YWVmYTk0NDQxZjg3YTFiMDlkYjhlNWUwMDNmMzFhM2FkNjBmZWY0Yzg1OWVhYjQ1OTQ0M2E3ODRhNjkzMzI0In0%3D"); err != nil {
+		panic(err)
 	}
 
-	return &Crawler{client: client}, nil
+	Cats()
 }
 
-func (c *Crawler) Force() *Crawler {
-	c.force = true
-	return c
-}
-
-func (c *Crawler) Cats() error {
-	fmt.Println("开始爬取所有分类...")
-
-	// 如果不是强制模式，查找已存在的最大ID
+func Cats() error {
 	startID := 1
-	if !c.force {
-		maxID, err := c.findMaxCatID()
-		if err != nil {
-			fmt.Printf("查找最大分类ID失败: %v，将从头开始爬取\n", err)
-		} else {
-			startID = maxID
-			fmt.Printf("找到最大分类ID: %d，将从 %d 开始继续爬取\n", maxID, startID)
-		}
+	if maxID, err := findMaxCatID(); err == nil {
+		startID = maxID
 	}
+
+	// 创建分类爬取进度条
+	totalCats := 10 - startID + 1
+	catBar := progressbar.NewOptions(totalCats,
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionShowBytes(false),
+		progressbar.OptionSetWidth(15),
+		progressbar.OptionSetDescription(fmt.Sprintf("%s爬取分类进度%s", utils.ColorCyan, utils.ColorReset)),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]=[reset]",
+			SaucerHead:    "[green]>[reset]",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}),
+	)
 
 	for i := startID; i <= 10; i++ {
-		fmt.Printf("正在爬取分类 %d/10...\n", i)
-		if err := c.Cat(i); err != nil {
+		catBar.Describe(fmt.Sprintf("%s正在爬取分类 %d/10%s", utils.ColorBlue, i, utils.ColorReset))
+
+		if err := Cat(i); err != nil {
+			catBar.Describe(fmt.Sprintf("%s分类 %d 爬取失败%s", utils.ColorRed, i, utils.ColorReset))
 			return err
 		}
-		fmt.Printf("分类 %d 爬取完成\n", i)
+
+		catBar.Describe(fmt.Sprintf("%s分类 %d 爬取完成%s", utils.ColorGreen, i, utils.ColorReset))
+		_ = catBar.Add(1)
 	}
 
-	fmt.Println("所有分类爬取完成")
+	_ = catBar.Finish()
 	return nil
 }
 
 // 查找已存在的最大分类ID
-func (c *Crawler) findMaxCatID() (int, error) {
+func findMaxCatID() (int, error) {
 	// 检查data目录是否存在
 	if _, err := os.Stat("data"); os.IsNotExist(err) {
 		return 0, fmt.Errorf("data目录不存在")
@@ -91,12 +96,10 @@ func (c *Crawler) findMaxCatID() (int, error) {
 	return maxID, nil
 }
 
-func (c *Crawler) Cat(id int) error {
-	fmt.Printf("开始爬取分类 %d 的章节...\n", id)
-
-	links, err := c.client.GetCat(id)
+func Cat(id int) error {
+	links, err := client.GetCat(id)
 	if err != nil {
-		fmt.Printf("failed crawl cat %d: %v\n", id, err)
+		fmt.Printf("%sfailed crawl cat %d: %v%s\n", utils.ColorRed, id, err, utils.ColorReset)
 		return err
 	}
 
@@ -104,47 +107,57 @@ func (c *Crawler) Cat(id int) error {
 	var chatpters []string
 	for _, link := range links {
 		chatpters = append(chatpters, link.URL)
-		fmt.Printf("章节: %s (题数: %d)\n", link.URL, link.Count)
 	}
 
-	fmt.Printf("分类 %d 共有 %d 个章节\n", id, len(chatpters))
-
-	// 如果不是强制模式，查找已存在的最大chapter
 	startIdx := 0
-	if !c.force {
-		maxChapter, err := c.findMaxChapter(id)
-		if err != nil {
-			fmt.Printf("查找最大章节失败: %v，将从头开始爬取\n", err)
-		} else {
-			// 找到对应的索引
-			for i, chapter := range chatpters {
-				var cat, chap int
-				if _, err := fmt.Sscanf(chapter, "https://tiku.scratchor.com/question/cat/%d/list?chapterId=%d", &cat, &chap); err == nil {
-					if chap == maxChapter {
-						startIdx = i
-						break
-					}
+	if maxChapter, err := findMaxChapter(id); err == nil {
+		// 找到对应的索引
+		for i, chapter := range chatpters {
+			var cat, chap int
+			if _, err := fmt.Sscanf(chapter, "https://tiku.scratchor.com/question/cat/%d/list?chapterId=%d", &cat, &chap); err == nil {
+				if chap == maxChapter {
+					startIdx = i
+					break
 				}
 			}
-			fmt.Printf("找到最大章节: %d，将从索引 %d 开始继续爬取\n", maxChapter, startIdx)
 		}
 	}
+
+	// 创建章节爬取进度条
+	totalChapters := len(chatpters) - startIdx
+	chapterBar := progressbar.NewOptions(totalChapters,
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionShowBytes(false),
+		progressbar.OptionSetWidth(15),
+		progressbar.OptionSetDescription(fmt.Sprintf("%s分类 %d 章节爬取进度%s", utils.ColorCyan, id, utils.ColorReset)),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]=[reset]",
+			SaucerHead:    "[green]>[reset]",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}),
+	)
 
 	for i := startIdx; i < len(chatpters); i++ {
-		fmt.Printf("正在爬取分类 %d 的章节 %d/%d: %s\n", id, i+1, len(chatpters), chatpters[i])
-		if err := c.Chapter(chatpters[i]); err != nil {
+		chapterBar.Describe(fmt.Sprintf("%s正在爬取分类 %d 的章节 %d/%d: %s%s", utils.ColorBlue, id, i+1, len(chatpters), chatpters[i], utils.ColorReset))
+
+		if err := Chapter(chatpters[i]); err != nil {
+			chapterBar.Describe(fmt.Sprintf("%s分类 %d 的章节 %d/%d 爬取失败%s", utils.ColorRed, id, i+1, len(chatpters), utils.ColorReset))
 			return err
 		}
-		fmt.Printf("分类 %d 的章节 %d/%d 爬取完成\n", id, i+1, len(chatpters))
+
+		chapterBar.Describe(fmt.Sprintf("%s分类 %d 的章节 %d/%d 爬取完成%s", utils.ColorGreen, id, i+1, len(chatpters), utils.ColorReset))
+		_ = chapterBar.Add(1)
 	}
 
-	fmt.Printf("分类 %d 所有章节爬取完成\n", id)
+	_ = chapterBar.Finish()
 
 	return nil
 }
 
 // 查找已存在的最大章节ID
-func (c *Crawler) findMaxChapter(catID int) (int, error) {
+func findMaxChapter(catID int) (int, error) {
 	// 检查分类目录是否存在
 	path := fmt.Sprintf("data/cat_%d", catID)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -181,7 +194,7 @@ func (c *Crawler) findMaxChapter(catID int) (int, error) {
 	return maxChapter, nil
 }
 
-func (c *Crawler) Chapter(url string) error {
+func Chapter(url string) error {
 	// 从 URL 中提取 cat, chapter
 	var cat, chapter int
 	if _, err := fmt.Sscanf(url, "https://tiku.scratchor.com/question/cat/%d/list?chapterId=%d", &cat, &chapter); err != nil {
@@ -189,47 +202,65 @@ func (c *Crawler) Chapter(url string) error {
 	}
 	path := fmt.Sprintf("data/cat_%d/chapter_%d", cat, chapter)
 
-	fmt.Printf("开始爬取分类 %d 章节 %d，保存路径: %s\n", cat, chapter, path)
-
 	// 创建目录
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return fmt.Errorf("创建目录失败: %v", err)
 	}
-	fmt.Printf("目录创建成功: %s\n", path)
 
 	pageNum := 1
-	for {
-		fmt.Printf("正在爬取分类 %d 章节 %d 第 %d 页...\n", cat, chapter, pageNum)
+	totalViews := 0
 
-		views, next, err := c.client.GetChapter(url)
+	for {
+		views, next, err := client.GetChapter(url)
 		if err != nil {
-			fmt.Printf("failed crawl chapter %s: %v\n", url, err)
+			fmt.Printf("%sfailed crawl chapter %s: %v%s\n", utils.ColorRed, url, err, utils.ColorReset)
 			return err
 		}
 
-		fmt.Printf("分类 %d 章节 %d 第 %d 页获取到 %d 个题目\n", cat, chapter, pageNum, len(views))
+		// 创建题目处理进度条
+		if len(views) > 0 {
+			viewBar := progressbar.NewOptions(len(views),
+				progressbar.OptionEnableColorCodes(true),
+				progressbar.OptionShowBytes(false),
+				progressbar.OptionSetWidth(15),
+				progressbar.OptionSetDescription(fmt.Sprintf("%s第 %d 页题目处理进度%s", utils.ColorCyan, pageNum, utils.ColorReset)),
+				progressbar.OptionSetTheme(progressbar.Theme{
+					Saucer:        "[green]=[reset]",
+					SaucerHead:    "[green]>[reset]",
+					SaucerPadding: " ",
+					BarStart:      "[",
+					BarEnd:        "]",
+				}),
+			)
 
-		for i, view := range views {
-			fmt.Printf("正在处理分类 %d 章节 %d 第 %d 页的题目 %d/%d: %s\n", cat, chapter, pageNum, i+1, len(views), view)
-			if err := c.View(path, view); err != nil {
-				return err
+			for i, view := range views {
+				viewBar.Describe(fmt.Sprintf("%s正在处理题目 %d/%d: %s%s", utils.ColorBlue, i+1, len(views), view, utils.ColorReset))
+
+				if err := View(path, view); err != nil {
+					viewBar.Describe(fmt.Sprintf("%s题目 %d/%d 处理失败%s", utils.ColorRed, i+1, len(views), utils.ColorReset))
+					return err
+				}
+
+				viewBar.Describe(fmt.Sprintf("%s题目 %d/%d 处理完成%s", utils.ColorGreen, i+1, len(views), utils.ColorReset))
+				_ = viewBar.Add(1)
 			}
+
+			_ = viewBar.Finish()
 		}
 
+		totalViews += len(views)
+
 		if next == "" {
-			fmt.Printf("分类 %d 章节 %d 所有页面爬取完成，共 %d 页\n", cat, chapter, pageNum)
 			break
 		}
 		url = next
 		pageNum++
 	}
 
-	fmt.Printf("分类 %d 章节 %d 爬取完成\n", cat, chapter)
-
 	return nil
 }
 
-func (c *Crawler) View(path, url string) error {
+func View(path, url string) error {
 	// 从 URL 中提取 alias
 	var alias string
 	if _, err := fmt.Sscanf(url, "https://tiku.scratchor.com/question/view/%s", &alias); err != nil {
@@ -239,23 +270,15 @@ func (c *Crawler) View(path, url string) error {
 	// 构建文件路径
 	filePath := fmt.Sprintf("%s/%s.json", path, alias)
 
-	// 如果不是强制模式且文件已存在，则跳过
-	if !c.force {
-		if _, err := os.Stat(filePath); err == nil {
-			fmt.Printf("文件已存在，跳过: %s\n", filePath)
-			return nil
-		}
+	if _, err := os.Stat(filePath); err == nil {
+		return nil
 	}
 
-	fmt.Printf("开始获取题目详情: %s (alias: %s)\n", url, alias)
-
-	view, err := c.client.GetView(url)
+	view, err := client.GetView(url)
 	if err != nil {
-		fmt.Printf("failed crawl view %s: %v\n", url, err)
+		fmt.Printf("%sfailed crawl view %s: %v%s\n", utils.ColorRed, url, err, utils.ColorReset)
 		return err
 	}
-
-	fmt.Printf("题目详情获取成功，别名: %s，保存路径: %s\n", alias, filePath)
 
 	// 将 view 转换为 JSON，不对字符进行转义
 	var buf bytes.Buffer
@@ -272,17 +295,5 @@ func (c *Crawler) View(path, url string) error {
 		return fmt.Errorf("写入文件失败: %v", err)
 	}
 
-	fmt.Printf("题目详情保存成功: %s (大小: %d 字节)\n", filePath, len(data))
-
 	return nil
-}
-
-func main() {
-	craler, err := NewCrawler("9c8adef9772544421fc21404af7ed346=e6f5696bd5ff493578540e8afee89af8; ssid=eyJpdiI6IjBRYUlUYzdNeFM4RGhjZ2pOT0RNWnc9PSIsInZhbHVlIjoiZUUzSW5NcTU0bFwvaVYwRFwvaVFIRXhzZldUYWFtcVdVMkpETlZKQmxTb1lkaWNKSGxmT05lVmdNMjA1XC8rQVZhXC84SjY1TG5aWGJRSGlkU0lUblJaZjhBPT0iLCJtYWMiOiI3YWVmYTk0NDQxZjg3YTFiMDlkYjhlNWUwMDNmMzFhM2FkNjBmZWY0Yzg1OWVhYjQ1OTQ0M2E3ODRhNjkzMzI0In0%3D")
-
-	if err != nil {
-		panic(err)
-	}
-
-	craler.Cats()
 }
