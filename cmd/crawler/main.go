@@ -94,10 +94,17 @@ func (c *Crawler) findMaxCatID() (int, error) {
 func (c *Crawler) Cat(id int) error {
 	fmt.Printf("开始爬取分类 %d 的章节...\n", id)
 
-	chatpters, err := c.client.GetCat(id)
+	links, err := c.client.GetCat(id)
 	if err != nil {
 		fmt.Printf("failed crawl cat %d: %v\n", id, err)
 		return err
+	}
+
+	// 提取链接列表
+	var chatpters []string
+	for _, link := range links {
+		chatpters = append(chatpters, link.URL)
+		fmt.Printf("章节: %s (题数: %d)\n", link.URL, link.Count)
 	}
 
 	fmt.Printf("分类 %d 共有 %d 个章节\n", id, len(chatpters))
