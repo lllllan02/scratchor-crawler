@@ -28,7 +28,7 @@ func main() {
 
 	// 使用通用文件遍历器处理文件
 	fmt.Printf("%s开始图片下载任务%s\n", utils.ColorCyan, utils.ColorReset)
-	err = utils.ProcessFiles("data", imageHandler, "图片下载器")
+	err = utils.ProcessFiles("data", imageHandler)
 	if err != nil {
 		fmt.Printf("%s图片下载失败%s: %v\n", utils.ColorRed, utils.ColorReset, err)
 		os.Exit(1)

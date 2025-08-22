@@ -41,7 +41,7 @@ func NewClient(cookie string) (*Client, error) {
 	client := http_client.New(
 		http_client.WithCookie("https://tiku.scratchor.com", cookie),
 		http_client.WithHeaders(headers),
-		http_client.WithLimiter(5),
+		http_client.WithLimiter(2),
 		http_client.WithResponseHandler(handler),
 		http_client.WithRetryStrategy(retryStrategy),
 	)

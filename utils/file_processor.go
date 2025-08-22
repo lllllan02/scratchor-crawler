@@ -36,13 +36,15 @@ func GetDirInfo(root string) (map[string]*DirInfo, error) {
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("遍历目录时出错: %w", err)
+			fmt.Printf("%s遍历目录时出错: %v%s\n", ColorRed, err, ColorReset)
+			return err
 		}
 
 		if !d.IsDir() {
 			relPath, err := filepath.Rel(root, path)
 			if err != nil {
-				return fmt.Errorf("获取相对路径失败 %s: %w", path, err)
+				fmt.Printf("%s获取相对路径失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
+				return err
 			}
 
 			dir := filepath.Dir(relPath)
@@ -66,12 +68,12 @@ func GetDirInfo(root string) (map[string]*DirInfo, error) {
 // 参数：
 //   - root: 要遍历的根目录
 //   - handler: 自定义的文件处理函数
-//   - description: 处理器的描述信息
-func ProcessFiles(root string, handler FileHandler, description string) error {
+func ProcessFiles(root string, handler FileHandler) error {
 	// 获取目录信息
 	dirs, err := GetDirInfo(root)
 	if err != nil {
-		return fmt.Errorf("统计目录失败: %w", err)
+		fmt.Printf("%s统计目录失败: %v%s\n", ColorRed, err, ColorReset)
+		return err
 	}
 
 	// 处理每个目录
@@ -101,7 +103,8 @@ func ProcessFiles(root string, handler FileHandler, description string) error {
 			needSave, err := handler(path)
 			if err != nil {
 				bar.Describe(fmt.Sprintf("%s处理失败%s %s", ColorRed, ColorReset, filepath.Base(path)))
-				return fmt.Errorf("处理文件失败 %s: %w", path, err)
+				fmt.Printf("%s处理文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
+				return err
 			}
 
 			if needSave {

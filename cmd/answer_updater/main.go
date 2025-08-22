@@ -27,7 +27,7 @@ func main() {
 
 	// 使用通用文件遍历器处理文件
 	fmt.Printf("%s开始答案更新任务%s\n", utils.ColorCyan, utils.ColorReset)
-	err = utils.ProcessFiles("data", answerHandler, "答案更新器")
+	err = utils.ProcessFiles("data", answerHandler)
 	if err != nil {
 		fmt.Printf("%s答案更新失败%s: %v\n", utils.ColorRed, utils.ColorReset, err)
 		os.Exit(1)
