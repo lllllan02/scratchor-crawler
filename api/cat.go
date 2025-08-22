@@ -8,11 +8,17 @@ import (
 )
 
 type LinkInfo struct {
+	Title string
 	URL   string
 	Count int
 }
 
-func (client *Client) GetCat(id int) ([]*LinkInfo, error) {
+type CatInfo struct {
+	Title string
+	Links []*LinkInfo
+}
+
+func (client *Client) GetCat(id int) (*CatInfo, error) {
 	url := fmt.Sprintf("https://tiku.scratchor.com/question/cat/%d", id)
 
 	// 获取 html
@@ -27,11 +33,14 @@ func (client *Client) GetCat(id int) ([]*LinkInfo, error) {
 		return nil, err
 	}
 
-	var links []*LinkInfo
+	cat := &CatInfo{}
+	cat.Title = strings.TrimSpace(doc.Find("h1.title").First().Text())
 
 	panel := doc.Find("div.ub-panel").First()
 	panel.Find("div.tw-flex").Each(func(i int, row *goquery.Selection) {
 		link := &LinkInfo{}
+
+		link.Title = strings.TrimSpace(row.Find("div.tw-flex-grow ").First().Text())
 
 		text := row.Find("div.ub-text-muted").First().Text()
 		fmt.Sscanf(strings.TrimSpace(text), "%d题", &link.Count)
@@ -39,8 +48,8 @@ func (client *Client) GetCat(id int) ([]*LinkInfo, error) {
 			link.URL = fmt.Sprintf("https://tiku.scratchor.com%s", href)
 		}
 
-		links = append(links, link)
+		cat.Links = append(cat.Links, link)
 	})
 
-	return links, nil
+	return cat, nil
 }
