@@ -43,8 +43,8 @@ func TestGetAnswer(t *testing.T) {
 		result, err := client.GetAnswer("7w3z8vedemkz2nmf", "问答题")
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, []string{`<p style="text-align: left;"><strong>答案解析：</strong></p><p style="text-align: left;"><strong>Glow-1</strong></p><p><img src="https://imgtk.scratchor.com/data/image/2025/07/14/3308_me1e_7340.png" width="164" height="300" style="width: 164px; height: 300px;"/></p><p style="text-align: left;"><strong>背景</strong></p><p><img src="https://imgtk.scratchor.com/data/image/2025/07/14/3309_tzh2_1181.png" width="177" height="214" style="width: 177px; height: 214px;"/></p>`}, result.Answer)
-		assert.Equal(t, `<p style="text-align: left;"><strong>评分标准:</strong></p><p>（1）正确添加两个背景；（2分）<br/></p><p>（2）正确为背景添加声音：Bossa Nova；（1分）<br/></p><p>（3）删除小猫角色；（1分）<br/></p><p>（4）正确添加角色Glow-1（1分），正确添加造型Glow-2、Glow-3；（2分）<br/></p><p style="text-align: left;">（5）角色初始位置在舞台中心，初始造型为Glow-3；（2分）</p><p>（6）初始背景为Hearts；（1分）<br/></p><p>（7）等待1秒，角色造型切换为Glow-2；（1分）<br/></p><p>（8）等待1秒，角色造型切换为Glow-1，背景切换为Theater；（2分）<br/></p><p>（9）声音播放正确。（2分）</p>`, result.Analysis)
+		assert.Equal(t, []string{`<p><strong>答案解析：</strong></p><p><strong>Glow-1</strong></p><p><img src="https://imgtk.scratchor.com/data/image/2025/07/14/3308_me1e_7340.png"/></p><p><strong>背景</strong></p><p><img src="https://imgtk.scratchor.com/data/image/2025/07/14/3309_tzh2_1181.png"/></p>`}, result.Answer)
+		assert.Equal(t, `<p><strong>评分标准:</strong></p><p>（1）正确添加两个背景；（2分）<br/></p><p>（2）正确为背景添加声音：Bossa Nova；（1分）<br/></p><p>（3）删除小猫角色；（1分）<br/></p><p>（4）正确添加角色Glow-1（1分），正确添加造型Glow-2、Glow-3；（2分）<br/></p><p>（5）角色初始位置在舞台中心，初始造型为Glow-3；（2分）</p><p>（6）初始背景为Hearts；（1分）<br/></p><p>（7）等待1秒，角色造型切换为Glow-2；（1分）<br/></p><p>（8）等待1秒，角色造型切换为Glow-1，背景切换为Theater；（2分）<br/></p><p>（9）声音播放正确。（2分）</p>`, result.Analysis)
 	})
 
 	t.Run("组合题", func(t *testing.T) {

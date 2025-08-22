@@ -73,7 +73,7 @@ func extractAnswer(doc *goquery.Document, questionType string) ([]string, error)
 		paragraphs := answerSelection.Find("p")
 		var answers []string
 		paragraphs.Each(func(i int, s *goquery.Selection) {
-			text := strings.TrimSpace(s.Text())
+			text := cleanHTML(s)
 			if text != "" {
 				answers = append(answers, text)
 			}
@@ -82,19 +82,11 @@ func extractAnswer(doc *goquery.Document, questionType string) ([]string, error)
 
 	case "问答题":
 		// 问答题、编程题：保留完整的HTML内容
-		answerHTML, err := answerSelection.Html()
-		if err != nil {
-			return nil, fmt.Errorf("获取答案HTML失败: %v", err)
-		}
-		return []string{strings.TrimSpace(answerHTML)}, nil
+		return []string{cleanHTML(answerSelection)}, nil
 
 	default:
 		// 默认情况：保留完整HTML内容
-		answerHTML, err := answerSelection.Html()
-		if err != nil {
-			return nil, fmt.Errorf("获取答案HTML失败: %v", err)
-		}
-		return []string{strings.TrimSpace(answerHTML)}, nil
+		return []string{cleanHTML(answerSelection)}, nil
 	}
 }
 
@@ -106,12 +98,7 @@ func extractAnalysis(doc *goquery.Document) (string, error) {
 	}
 
 	// 如果是文本答案，保留完整的HTML内容（包括图片等）
-	answerHTML, err := analysisSelection.Html()
-	if err != nil {
-		return "", fmt.Errorf("获取答案HTML失败: %v", err)
-	}
-
-	return strings.TrimSpace(answerHTML), nil
+	return cleanHTML(analysisSelection), nil
 }
 
 // parseAnswerResponse 解析答案API的JSON响应
