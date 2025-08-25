@@ -62,7 +62,8 @@ func Cat(id int) error {
 			}),
 		)
 
-		path := fmt.Sprintf("data/%s/%s", cat.Title, link.Title)
+		path := fmt.Sprintf("data/%s/%s",
+			utils.CleanFileName(cat.Title), utils.CleanFileName(link.Title))
 		if err := Chapter(path, link.URL, bar); err != nil {
 			return err
 		}
