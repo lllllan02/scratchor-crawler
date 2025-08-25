@@ -62,7 +62,8 @@ func Cat(id int) error {
 			}),
 		)
 
-		if err := Chapter(bar, link.URL); err != nil {
+		path := fmt.Sprintf("data/%s/%s", cat.Title, link.Title)
+		if err := Chapter(path, link.URL, bar); err != nil {
 			return err
 		}
 
@@ -73,13 +74,12 @@ func Cat(id int) error {
 	return nil
 }
 
-func Chapter(bar *progressbar.ProgressBar, url string) error {
+func Chapter(path, url string, bar *progressbar.ProgressBar) error {
 	// 从 URL 中提取 cat, chapter
 	var cat, chapter int
 	if _, err := fmt.Sscanf(url, "https://tiku.scratchor.com/question/cat/%d/list?chapterId=%d", &cat, &chapter); err != nil {
 		return fmt.Errorf("解析 chapter ID 失败: %v", err)
 	}
-	path := fmt.Sprintf("data/cat_%d/chapter_%d", cat, chapter)
 
 	// 创建目录
 	os.MkdirAll(path, 0755)
