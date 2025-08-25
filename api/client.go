@@ -7,10 +7,15 @@ import (
 	http_client "github.com/lllllan02/http-client"
 )
 
+// LimiterConcurrency 限流器并发数，默认为2
+var LimiterConcurrency uint = 2
+
 type Client struct {
 	*http_client.Client
 }
 
+// NewClient 创建一个新的客户端实例
+// cookie: 认证cookie
 func NewClient(cookie string) (*Client, error) {
 	headers := map[string]string{
 		"accept-language":    "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
@@ -41,7 +46,7 @@ func NewClient(cookie string) (*Client, error) {
 	client := http_client.New(
 		http_client.WithCookie("https://tiku.scratchor.com", cookie),
 		http_client.WithHeaders(headers),
-		http_client.WithLimiter(2),
+		http_client.WithLimiter(LimiterConcurrency),
 		http_client.WithResponseHandler(handler),
 		http_client.WithRetryStrategy(retryStrategy),
 	)

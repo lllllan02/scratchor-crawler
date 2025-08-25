@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -12,6 +13,14 @@ import (
 var client *api.Client
 
 func main() {
+	// 解析命令行参数
+	var limiterConcurrency uint
+	flag.UintVar(&limiterConcurrency, "limiter", 2, "限流器并发数，默认为2")
+	flag.Parse()
+
+	// 设置全局限流器并发数
+	api.LimiterConcurrency = limiterConcurrency
+
 	var err error
 	if client, err = api.NewClient("9c8adef9772544421fc21404af7ed346=e6f5696bd5ff493578540e8afee89af8; ssid=eyJpdiI6IjBRYUlUYzdNeFM4RGhjZ2pOT0RNWnc9PSIsInZhbHVlIjoiZUUzSW5NcTU0bFwvaVYwRFwvaVFIRXhzZldUYWFtcVdVMkpETlZKQmxTb1lkaWNKSGxmT05lVmdNMjA1XC8rQVZhXC84SjY1TG5aWGJRSGlkU0lUblJaZjhBPT0iLCJtYWMiOiI3YWVmYTk0NDQxZjg3YTFiMDlkYjhlNWUwMDNmMzFhM2FkNjBmZWY0Yzg1OWVhYjQ1OTQ0M2E3ODRhNjkzMzI0In0%3D"); err != nil {
 		panic(err)
