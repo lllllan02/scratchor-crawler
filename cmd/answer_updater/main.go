@@ -21,12 +21,12 @@ func main() {
 	api.LimiterConcurrency = limiterConcurrency
 
 	var err error
-	if client, err = api.NewClient("Hm_lvt_22880f1d42e3788b94e7aa1361ea923a=1755757549; HMACCOUNT=4D5E77D5BB397FC9; 333decb516a63de949aa73f356ff0515=51967059785189c5bd710720adcf8afb; ssid=eyJpdiI6ImFLeDVPd3AyVVExVlR2VzhpRGVTdXc9PSIsInZhbHVlIjoiNXF3Wk10TE40OUl2OEhCY252cFVjT0dZVmd2eUdrRlNiXC85QjY4Q3Ztdk5HWTFLaTlVTjJSS1hZcUxrd1RDNXZSZ3BqOVN2XC8yc1NSTFBtdlBBTjdpdz09IiwibWFjIjoiMDU3MzllNjBmMmZlYzFjZTQ5N2EwMmI1NjdkNmE3N2RkNTY5ZDM2YjAyOGY2ZjhlZDg2YWM3MzkzODdiMjMwMiJ9; Hm_lpvt_22880f1d42e3788b94e7aa1361ea923a=1755854532"); err != nil {
+	if client, err = api.NewClient("Hm_lvt_22880f1d42e3788b94e7aa1361ea923a=1755757549; HMACCOUNT=4D5E77D5BB397FC9; 52bde9a15bc245885f2e1d022c0b29eb=563268ca5f425cad1d9ffc90045d0ce7; ssid=eyJpdiI6IjVRMldrNVFSXC9GOU1TMDV2ZnRvOXV3PT0iLCJ2YWx1ZSI6IkJKSDUwd0htdlprZzA5a25ld0VSeGlUbzVFamh4NFpCOFdBSTJjWU8wU2kwZTYzRFhtQXU1MmhtRUxyS3V1R0pCVVhcLzgxYWFxeERWUUVrVXlCOUdrZz09IiwibWFjIjoiNDAyODE1ZDlmYjEyMmQxY2I3ZmFkOGE5ZjdkMDUwZDNkNzljOTZhMTJjY2M3NTAxYTAyMDdiNDc0MzhmYmI4OCJ9; Hm_lpvt_22880f1d42e3788b94e7aa1361ea923a=1756170058"); err != nil {
 		fmt.Printf("%s创建客户端失败%s: %v\n", utils.ColorRed, utils.ColorReset, err)
 		os.Exit(1)
 	}
 
-	utils.ProcessFiles("data", func(view *api.View) (needSave bool, err error) {
+	utils.ProcessFiles("data", func(_ string, view *api.View) (needSave bool, err error) {
 		for _, item := range view.Items {
 			ns, err := updateAnswer(item)
 			if err != nil {

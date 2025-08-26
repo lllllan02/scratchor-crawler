@@ -28,8 +28,8 @@ type DirInfo struct {
 }
 
 // 文件处理函数类型
-// 参数：文件路径，返回：是否需要保存文件，错误信息
-type FileHandler func(view *api.View) (bool, error)
+// 参数：文件路径，View对象，返回：是否需要保存文件，错误信息
+type FileHandler func(filePath string, view *api.View) (bool, error)
 
 // 获取目录信息
 func GetDirInfo(root string) (map[string]*DirInfo, error) {
@@ -104,7 +104,7 @@ func ProcessFiles(root string, handler FileHandler) error {
 			}
 
 			// 调用自定义处理函数
-			needSave, err := handler(&view)
+			needSave, err := handler(path, &view)
 			if err != nil {
 				fmt.Printf("%s处理文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
 				return err
