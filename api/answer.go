@@ -128,10 +128,5 @@ func parseAnswerResponse(body string) (string, error) {
 		}
 	}
 
-	// 检查是否有HTML数据
-	if resp.Data.HTML == "" {
-		return "", fmt.Errorf("响应中没有HTML数据")
-	}
-
 	return resp.Data.HTML, nil
 }
