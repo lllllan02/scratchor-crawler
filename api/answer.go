@@ -55,7 +55,7 @@ func (client *Client) GetAnswer(id string, questionType string) (*AnswerResult, 
 func extractAnswer(doc *goquery.Document, questionType string) ([]string, error) {
 	answerSelection := doc.Find("div.answer-body")
 	if answerSelection.Length() == 0 {
-		return nil, fmt.Errorf("未找到答案内容")
+		return []string{}, nil
 	}
 
 	// 根据题型进行不同的解析逻辑
