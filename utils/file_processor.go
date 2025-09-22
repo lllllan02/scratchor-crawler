@@ -29,7 +29,7 @@ type DirInfo struct {
 
 // 文件处理函数类型
 // 参数：文件路径，View对象，返回：是否需要保存文件，错误信息
-type FileHandler func(filePath string, view *api.View) (bool, error)
+type FileHandler func(filePath string, view *api.Question) (bool, error)
 
 // 获取目录信息
 func GetDirInfo(root string) (map[string]*DirInfo, error) {
@@ -97,7 +97,7 @@ func ProcessFiles(root string, handler FileHandler) error {
 
 		// 处理目录中的每个文件
 		for _, path := range dirInfo.Files {
-			view, err := ReadJSON[api.View](path)
+			view, err := ReadJSON[api.Question](path)
 			if err != nil {
 				fmt.Printf("%s读取文件失败 %s: %v%s\n", ColorRed, path, err, ColorReset)
 				return err

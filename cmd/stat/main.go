@@ -33,10 +33,10 @@ func main() {
 	}
 
 	// 处理所有文件
-	utils.ProcessFiles("data", func(filePath string, view *api.View) (needSave bool, err error) {
+	utils.ProcessFiles("data", func(filePath string, view *api.Question) (needSave bool, err error) {
 		// 更新根目录统计
 		rootStats.TotalQuestions++
-		if hasAnswer(view.Question) {
+		if hasAnswer(view.QuestionBody) {
 			rootStats.AnsweredCount++
 		}
 		if view.Type != "" {
@@ -46,7 +46,7 @@ func main() {
 		// 获取文件所在目录路径并更新目录树
 		dirPath := getDirectoryFromPath(filePath)
 		if dirPath != "" {
-			updateDirectoryTree(rootStats, dirPath, view.Type, hasAnswer(view.Question))
+			updateDirectoryTree(rootStats, dirPath, view.Type, hasAnswer(view.QuestionBody))
 		}
 
 		return false, nil
@@ -152,7 +152,7 @@ func printNodeStats(node *DirectoryNode, level int) {
 }
 
 // 检查题目是否有答案
-func hasAnswer(question *api.Question) bool {
+func hasAnswer(question *api.QuestionBody) bool {
 	// 检查Answer字段
 	if len(question.Answer) > 0 {
 		for _, answer := range question.Answer {

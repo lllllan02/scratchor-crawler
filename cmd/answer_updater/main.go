@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	utils.ProcessFiles("data", func(_ string, view *api.View) (needSave bool, err error) {
+	utils.ProcessFiles("data", func(_ string, view *api.Question) (needSave bool, err error) {
 		for _, item := range view.Items {
 			ns, err := updateAnswer(item)
 			if err != nil {
@@ -36,7 +36,7 @@ func main() {
 			needSave = needSave || ns
 		}
 
-		ns, err := updateAnswer(view.Question)
+		ns, err := updateAnswer(view.QuestionBody)
 		if err != nil {
 			return false, err
 		}
@@ -44,7 +44,7 @@ func main() {
 	})
 }
 
-func updateAnswer(question *api.Question) (bool, error) {
+func updateAnswer(question *api.QuestionBody) (bool, error) {
 	if question.Alias == "" || question.Answer != nil || question.Analysis != "" {
 		return false, nil
 	}

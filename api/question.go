@@ -6,13 +6,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type View struct {
-	*Question
+type Question struct {
+	*QuestionBody
 	Tags  []string
-	Items []*Question
+	Items []*QuestionBody
 }
 
-type Question struct {
+type QuestionBody struct {
 	Alias    string   // 题目别名
 	Type     string   // 题目类型
 	Body     string   // 题目内容
@@ -21,7 +21,7 @@ type Question struct {
 	Answer   []string // 题目答案
 }
 
-func (client *Client) GetView(url string) (*View, error) {
+func (client *Client) GetQuestion(url string) (*Question, error) {
 	body, err := client.Get(url)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (client *Client) GetView(url string) (*View, error) {
 		return nil, err
 	}
 
-	view := &View{}
+	view := &Question{}
 
 	// 先获取子题目（在移除之前）
 	doc.Find("div.question-items .pb-question-view").Each(func(i int, s *goquery.Selection) {
@@ -43,7 +43,7 @@ func (client *Client) GetView(url string) (*View, error) {
 	mainQuestionDoc := doc.Find("div.pb-question-view").First()
 	// 移除子题部分，确保主干题目不包含子题内容
 	mainQuestionDoc.Find("div.question-items").Remove()
-	view.Question = getQuestion(mainQuestionDoc)
+	view.QuestionBody = getQuestion(mainQuestionDoc)
 
 	// 获取题目标签
 	doc.Find("div.ub-panel .body span").Each(func(i int, s *goquery.Selection) {
@@ -56,8 +56,8 @@ func (client *Client) GetView(url string) (*View, error) {
 	return view, nil
 }
 
-func getQuestion(doc *goquery.Selection) *Question {
-	question := &Question{}
+func getQuestion(doc *goquery.Selection) *QuestionBody {
+	question := &QuestionBody{}
 
 	// 从 div.question 中获取 alias
 	if alias, exists := doc.Find("div.question").Attr("data-question-alias"); exists {

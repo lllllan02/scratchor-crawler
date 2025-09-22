@@ -124,7 +124,7 @@ func View(path, url string) error {
 		return nil
 	}
 
-	view, err := client.GetView(url)
+	view, err := client.GetQuestion(url)
 	if err != nil {
 		fmt.Printf("%s获取题目「%s」失败: %v%s\n", utils.ColorRed, url, err, utils.ColorReset)
 		return err
