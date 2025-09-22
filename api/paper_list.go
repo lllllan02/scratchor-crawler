@@ -7,7 +7,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (client *Client) GetPaper(url string) (links []string, next string, err error) {
+func (client *Client) GetPaperList(url string) (links []string, next string, err error) {
 	// 获取 html
 	body, err := client.Get(url)
 	if err != nil {

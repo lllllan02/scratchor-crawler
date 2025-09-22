@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetPaper(t *testing.T) {
-	links, next, err := client.GetPaper("https://tiku.scratchor.com/paper")
+func TestGetPaperList(t *testing.T) {
+	links, next, err := client.GetPaperList("https://tiku.scratchor.com/paper")
 	assert.NoError(t, err)
 	for _, link := range links {
 		fmt.Printf("link: %s\n", link)
