@@ -57,7 +57,7 @@ func (client *Client) GetPaper(url string) (*Paper, error) {
 
 		s.Find("div.section-body a").Each(func(i int, a *goquery.Selection) {
 			if alias, exit := a.Attr("data-alias"); exit {
-				section.Questions = append(section.Questions, alias)
+				section.Questions = append(section.Questions, strings.TrimRight(alias, "-0"))
 			}
 		})
 
