@@ -21,7 +21,7 @@ func main() {
 	api.LimiterConcurrency = limiterConcurrency
 
 	var err error
-	if client, err = api.NewClient("Hm_lvt_22880f1d42e3788b94e7aa1361ea923a=1755757549; HMACCOUNT=4D5E77D5BB397FC9; 52bde9a15bc245885f2e1d022c0b29eb=563268ca5f425cad1d9ffc90045d0ce7; ssid=eyJpdiI6IjVRMldrNVFSXC9GOU1TMDV2ZnRvOXV3PT0iLCJ2YWx1ZSI6IkJKSDUwd0htdlprZzA5a25ld0VSeGlUbzVFamh4NFpCOFdBSTJjWU8wU2kwZTYzRFhtQXU1MmhtRUxyS3V1R0pCVVhcLzgxYWFxeERWUUVrVXlCOUdrZz09IiwibWFjIjoiNDAyODE1ZDlmYjEyMmQxY2I3ZmFkOGE5ZjdkMDUwZDNkNzljOTZhMTJjY2M3NTAxYTAyMDdiNDc0MzhmYmI4OCJ9; Hm_lpvt_22880f1d42e3788b94e7aa1361ea923a=1756170058"); err != nil {
+	if client, err = api.NewClient("HMACCOUNT=4D5E77D5BB397FC9; Hm_lvt_22880f1d42e3788b94e7aa1361ea923a=1758358879; a0e0cf20f929d48c545b6794f503b8d2=14ea9ecc4ecea3c94148df41959a843d; ssid=eyJpdiI6ImdxUGpWRkhGMWdyZmwzXC9XSElhKzlRPT0iLCJ2YWx1ZSI6ImNqemx6Y2poNFNMU2tLWE1wc0VhSFVMSFVXOHM2S090bUtLK3JJbTI4bjFyYnpJMk5BXC9vUzZYXC9MVU9pRDNaNGIralJYMDAyU1h3OVpWa1VJOEdBY1E9PSIsIm1hYyI6ImUzZDk0NDU1NzUyZmJjYjU1N2EyYzEzMzA0NmM5ZGJkYzFkMGYwYTA2NTFhNWEzMzI4MmY2OGI2NmFkZTI1MmEifQ%3D%3D; Hm_lpvt_22880f1d42e3788b94e7aa1361ea923a=1758502503"); err != nil {
 		fmt.Printf("%s创建客户端失败%s: %v\n", utils.ColorRed, utils.ColorReset, err)
 		os.Exit(1)
 	}
@@ -45,7 +45,7 @@ func main() {
 }
 
 func updateAnswer(question *api.Question) (bool, error) {
-	if question.Answer != nil || question.Analysis != "" {
+	if question.Alias == "" || question.Answer != nil || question.Analysis != "" {
 		return false, nil
 	}
 
